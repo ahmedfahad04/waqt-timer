@@ -30,6 +30,16 @@ Phone apps know where you are. Linux panel clocks do not. Waqt Timer closes that
 - Offline fallback when the API is down.
 - Autostart on login, one codebase for GNOME, KDE, XFCE and MATE.
 
+## Demo
+
+Top bar countdown with the full day menu open (Tongi, auto, 24h):
+
+![Top bar countdown and prayer menu](images/demo_image.png)
+
+Location and Display dialog with city search and time format:
+
+![Location and display settings](images/demo_image_2.png)
+
 ## Install
 
 ### Option A: git clone and run from source (recommended)
