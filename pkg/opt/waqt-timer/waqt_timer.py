@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """Waqt Timer v1.3.0 - top-bar prayer countdown. GNOME + Tray via AppIndicator."""
 import json, os, sys, urllib.request, urllib.parse
 from datetime import datetime, date, timedelta

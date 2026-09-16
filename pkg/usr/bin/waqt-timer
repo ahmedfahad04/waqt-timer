@@ -1,2 +1,2 @@
 #!/bin/sh
-exec /opt/waqt-timer/waqt_timer.py "$@"
+exec /usr/bin/python3 /opt/waqt-timer/waqt_timer.py "$@"

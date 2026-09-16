@@ -2,6 +2,10 @@
 
 All notable changes to this project are tracked here.
 
+## [1.3.1] - 2026-09-16
+### Fixed
+- Fixed `ModuleNotFoundError: No module named 'gi'` under conda. Launcher and shebang now pin `/usr/bin/python3` so the system PyGObject is always used, even with a conda env active.
+
 ## [1.3.0] - 2026-09-16
 ### Changed - precision release for Bangladesh
 - Default calculation switched from MWL (18/17, Shafi) to Karachi (18/18, Hanafi) to match Islamic Foundation Bangladesh. Research via Aladhan docs and Niyat 2026 guides confirmed Karachi + Hanafi Asr is the local mosque standard.
