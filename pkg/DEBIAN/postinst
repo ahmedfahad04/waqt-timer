@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+update-desktop-database -q || true
+gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+# autostart copy is already in /etc/xdg/autostart via package
+exit 0

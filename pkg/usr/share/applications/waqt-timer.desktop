@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Waqt Timer
+Comment=Prayer countdown in top bar (auto IP location, MWL)
+Exec=/usr/bin/waqt-timer
+Icon=waqt-timer
+Terminal=false
+Type=Application
+Categories=Utility;GNOME;GTK;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
