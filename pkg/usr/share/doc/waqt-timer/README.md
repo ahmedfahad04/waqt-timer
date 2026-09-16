@@ -16,6 +16,8 @@
 
 `Maghrib (1:06:47 left) | Isha 19:13`
 
+Read how it was built: [Have You Ever Wondered How a Linux App Is Actually Built?](https://medium.com/@ahmedfahad04/have-you-ever-wondered-how-a-linux-app-is-actually-built-let-us-dismantle-the-myth-cbf00114090a)
+
 </div>
 
 ## Why this exists
