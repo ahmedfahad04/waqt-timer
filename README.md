@@ -1,5 +1,25 @@
 <div align="center">
 
+<img src="pkg/usr/share/icons/hicolor/scalable/apps/waqt-timer.svg" width="96" alt="Waqt Timer icon" />
+
+# Waqt Timer
+
+**Prayer countdown in your Linux top bar. Auto located, district precise, always on time.**
+
+[![version](https://img.shields.io/badge/version-1.5.2-green)](CHANGELOG.md)
+[![release](https://img.shields.io/badge/release-v1.5.2-blue)](https://github.com/ahmedfahad04/waqt-timer/releases/tag/v1.5.2)
+[![platform](https://img.shields.io/badge/platform-Ubuntu%2022.04%2B-blue)](https://ubuntu.com)
+[![desktop](https://img.shields.io/badge/desktop-GNOME%20%7C%20KDE%20%7C%20XFCE%20%7C%20MATE-lightgrey)](#)
+[![python](https://img.shields.io/badge/python-3.8%2B-yellow)](https://www.python.org)
+[![method](https://img.shields.io/badge/method-Karachi%2018%2F18%20Hanafi-orange)](#configuration)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+`Ishraq -1:19:53 | Forbidden 11:48 AM-11:53 AM`
+
+Read how it was built: [Have You Ever Wondered How a Linux App Is Actually Built?](https://medium.com/@ahmedfahad04/have-you-ever-wondered-how-a-linux-app-is-actually-built-let-us-dismantle-the-myth-cbf00114090a)
+
+</div>
+
 ## Why this exists
 
 Phone apps know where you are. Linux panel clocks do not. Waqt Timer closes that gap: it lives in the top bar, finds your location over the internet or by city name, fetches the correct times for those exact coordinates, and counts down every second. Built for Bangladesh first (Karachi 18/18, Hanafi Asr, the Islamic Foundation Bangladesh standard), usable anywhere by switching method and school.
@@ -83,13 +103,13 @@ waqt-timer --test --method Egypt --school Shafi --refresh
 
 ## Configuration
 
-| Setting     | Default                      | Where                                |
-| ----------- | ---------------------------- | ------------------------------------ |
-| Method      | Karachi (18/18) [Bangladesh] | Menu,`--method`, config            |
-| School      | Hanafi                       | Menu,`--school`                    |
-| Format      | 24h                          | Menu,`--format`                    |
-| Config file | -                            | `~/.config/waqt-timer/config.json` |
-| Cache       | -                            | `~/.cache/waqt-timer/timings.json` |
+| Setting     | Default                          | Where                     |
+| ----------- | -------------------------------- | ------------------------- |
+| Method      | Karachi (18/18) [Bangladesh]     | Menu, `--method`, config  |
+| School      | Hanafi                           | Menu, `--school`          |
+| Format      | 24h                              | Menu, `--format`          |
+| Config file | -                                | `~/.config/waqt-timer/config.json` |
+| Cache       | -                                | `~/.cache/waqt-timer/timings.json` |
 
 Times come from Aladhan with `school=Hanafi, midnightMode=Standard, latitudeAdjustmentMethod=AngleBased`. City search uses Nominatim with Open-Meteo fallback. The cache is keyed by date, coords, method and school, so switching method or school always refetches.
 
@@ -103,7 +123,7 @@ Times come from Aladhan with `school=Hanafi, midnightMode=Standard, latitudeAdju
 
 1. Fork and create a branch: `git checkout -b fix/my-fix`.
 2. Test headless first: `python3 pkg/opt/waqt-timer/waqt_timer.py --test --refresh`.
-3. Rebuild the deb: `dpkg-deb --build pkg waqt-timer_1.5.2_all.deb`.
+3. Rebuild the deb: `dpkg-deb --build pkg waqt-timer_1.5.x_all.deb`.
 4. Open a pull request with the city you tested and before/after times.
 
 ## Issues
