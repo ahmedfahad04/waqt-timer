@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Waqt Timer v1.3.0 - top-bar prayer countdown. GNOME + Tray via AppIndicator."""
+"""Waqt Timer v1.5.2 - top-bar prayer countdown. GNOME + Tray via AppIndicator."""
 import json, os, sys, urllib.request, urllib.parse
 from datetime import datetime, date, timedelta
 from pathlib import Path
@@ -8,16 +8,66 @@ CONFIG_DIR = Path.home() / ".config" / "waqt-timer"
 CACHE_DIR = Path.home() / ".cache" / "waqt-timer"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 CACHE_FILE = CACHE_DIR / "timings.json"
-METHOD_MAP = {"MWL": 3, "Karachi": 1, "ISNA": 2, "Egypt": 5}
+METHOD_MAP = {"Shia": 0, "Karachi": 1, "ISNA": 2, "MWL": 3, "Makkah": 4,
+              "Egypt": 5, "Tehran": 7, "Gulf": 8, "Kuwait": 9, "Qatar": 10,
+              "Singapore": 11, "France": 12, "Turkey": 13, "Russia": 14,
+              "Moonsighting": 15, "Dubai": 16, "Malaysia": 17, "Tunisia": 18,
+              "Algeria": 19, "Indonesia": 20, "Morocco": 21, "Lisbon": 22,
+              "Jordan": 23}
+METHOD_KEYS = ["Karachi", "MWL", "Egypt", "Makkah", "ISNA", "Tehran", "Shia",
+               "Gulf", "Kuwait", "Qatar", "Singapore", "France", "Turkey",
+               "Russia", "Moonsighting", "Dubai", "Malaysia", "Tunisia",
+               "Algeria", "Indonesia", "Morocco", "Lisbon", "Jordan"]
+METHOD_LABELS = {"Karachi": "Karachi - Islamic Sciences (18/18) [Bangladesh]",
+                 "MWL": "MWL - Muslim World League (18/17)",
+                 "Egypt": "Egypt - General Authority (19.5/17.5)",
+                 "Makkah": "Makkah - Umm al-Qura",
+                 "ISNA": "ISNA - North America (15/15)"}
 SCHOOL_MAP = {"Shafi": 0, "Hanafi": 1}
 # Bangladesh default is Karachi 18/18 with Hanafi Asr per Islamic Foundation Bangladesh.
 DEFAULT_CFG = {"lat": 23.8103, "lon": 90.4125, "city": "Dhaka", "country": "Bangladesh",
                "method": "Karachi", "school": "Hanafi",
                "location_mode": "auto", "time_format": "24h"}
-UA = "waqt-timer/1.3"
+UA = "waqt-timer/1.5.2"
 
 PRAYERS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"]
 ALL = ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"]
+
+# Makruh / forbidden gaps (verified via SeekersGuidance Hanafi, IslamQA, IslamicCalc,
+# Sahih Muslim 612, Islamweb fatwa 84538):
+# - Sunrise: no prayer from sunrise until spear's length, ~15-20 min after.
+#   Dhaka sites (Islamuna) use 15 min (e.g. 05:36-05:51). We use 15 min.
+# - Noon (istiwa/zawal): no prayer while sun is at zenith. The instant is
+#   momentary; scholars add precaution (ihtiyat). Hanafi-Deobandi mashhur is
+#   5 min before Dhuhr (Mangera 3-5, Darul Ifta Birmingham 5, Bahishti Zewar
+#   practice 5); Islamic Foundation Bangladesh uses 5-6 min before listed Zuhr.
+#   Triple-verified Sep 2026: fiqh texts + BD apps + solar-noon math for Gazipur
+#   (true noon 11:51:30, Dhuhr 11:52/53). We use 5 min.
+# - Sunset yellowing (isfirar): preferred Asr ends when sun turns yellow/pale
+#   (Muslim 612); visual = sun low enough to look at (~5 deg, spear's length).
+#   Practical value ~15 min before Maghrib. Asr FARD stays valid and due till
+#   sunset (catch 1 rakah before sunset = caught Asr, Bukhari/Muslim), so the
+#   app shows "Asr (Makruh)", never "Forbidden", in this stretch. Nafl banned
+#   after Asr till sunset (Bukhari/Muslim).
+# - Isha fard is valid till true dawn, but delaying past shar'i midnight
+#   (Maghrib->Fajr midpoint) is makruh (Zahidi/Ibn Nujaym: tahriman; Ibn Abidin:
+#   tanzihan). Preferred: delay till first third/half, not past half.
+#   SeekersGuidance Hanafi; IslamQA. App shows an "Isha (Makruh)" info row.
+# - Isha->Fajr night itself is NOT forbidden: night prayer (qiyam/Tahajjud)
+#   Isha till Subh Sadiq is praised, best in last third (Muslim: best prayer
+#   after fard is night prayer). App shows a Tahajjud info row.
+# - Ishraq/Duha is Nafl (voluntary): starts after sunrise gap, ends at zawal start.
+#   Majority view (IslamOnline, Fiqh-us-Sunnah): Ishraq and Duha are one prayer;
+#   minority splits early Ishraq vs late Duha/Chasht. App shows one Nafl slot.
+SUNRISE_FORBIDDEN_MIN = 15
+NOON_FORBIDDEN_MIN = 5
+SUNSET_FORBIDDEN_MIN = 15
+ISHRAQ_LABEL = "Ishraq (Nafl)"
+FORBIDDEN_LABEL = "Forbidden"
+ASR_MAKRUH_LABEL = "Asr (Makruh)"
+ISHA_MAKRUH_LABEL = "Isha (Makruh)"
+SUNSET_LABEL = "Sunset"
+TAHAJJUD_LABEL = "Tahajjud (Nafl)"
 
 def load_cfg():
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -142,7 +192,12 @@ def fetch_offline(lat, lon, method, dt: date, school="Hanafi"):
     else:
         tz = -time.timezone / 3600
     asr_factor = 2 if school == "Hanafi" else 1
-    pt = PrayTimes(method=method, asr_factor=asr_factor)
+    # Offline port only knows 4 angle sets; other methods (Makkah fixed 90-min
+    # Isha etc.) fall back to Karachi angles until network returns.
+    pt_method = method if method in ("MWL", "ISNA", "Egypt", "Karachi") else "Karachi"
+    if pt_method != method:
+        print(f"[waqt] offline has no {method} angles, using Karachi approx", file=sys.stderr)
+    pt = PrayTimes(method=pt_method, asr_factor=asr_factor)
     fl = pt.get_times(dt, lat, lon, tz)
     out = {}
     for k in ALL:
@@ -175,22 +230,62 @@ def to_dt(hm: str, base: date):
     h, m = map(int, hm.split(":")[:2])
     return datetime(base.year, base.month, base.day, h, m)
 
+def dhuhr_name(day: date):
+    """Friday Dhuhr is Jumuah. Same start time as Dhuhr (majority view, Islamweb)."""
+    return "Jumuah" if day.weekday() == 4 else "Dhuhr"
+
+def day_bounds(timings, day: date):
+    """All waqt boundaries for one day. Keys use API names; display renames Dhuhr."""
+    fajr = to_dt(timings["Fajr"], day)
+    sunrise = to_dt(timings["Sunrise"], day)
+    ishraq = sunrise + timedelta(minutes=SUNRISE_FORBIDDEN_MIN)
+    dhuhr = to_dt(timings["Dhuhr"], day)
+    zawal = dhuhr - timedelta(minutes=NOON_FORBIDDEN_MIN)
+    asr = to_dt(timings["Asr"], day)
+    maghrib = to_dt(timings["Maghrib"], day)
+    makruh_sunset = maghrib - timedelta(minutes=SUNSET_FORBIDDEN_MIN)
+    sunset = maghrib  # sun disappears = Maghrib begins (Karachi method, +0 min)
+    isha = to_dt(timings["Isha"], day)
+    return {"Fajr": fajr, "Sunrise": sunrise, "Ishraq": ishraq,
+            "Zawal": zawal, "Dhuhr": dhuhr, "Asr": asr,
+            "MakruhSunset": makruh_sunset, "Sunset": sunset,
+            "Maghrib": maghrib, "Isha": isha}
+
 def current_next(timings_today, timings_tomorrow, now: datetime):
+    """Full-day sequence with correct Fajr end, Nafl Ishraq, and makruh gaps.
+
+    Order: Isha(y) | Fajr [Fajr, Sunrise) | Forbidden(sunrise gap)
+    | Ishraq(Nafl) [sunrise+15, zawal) | Forbidden(noon, 10 min)
+    | Jumuah/Dhuhr | Asr | Asr(Makruh, yellowing ~15 min) | Maghrib(Sunset)
+    | Isha | Fajr(tomorrow). Night Isha->Fajr is Tahajjud-permitted, not forbidden.
+    Fajr ends at Sunrise (not Dhuhr). Ishraq/Duha is Nafl.
+    """
     today = now.date()
-    built = [(n, to_dt(timings_today[n], today)) for n in PRAYERS]
-    built.sort(key=lambda x: x[1])
-    if now < built[0][1]:
-        fajr_today = built[0][1]
+    b = day_bounds(timings_today, today)
+    dlabel = dhuhr_name(today)
+    if now < b["Fajr"]:
         isha_y = to_dt(timings_today["Isha"], today) - timedelta(days=1)
-        return ("Isha", isha_y, "Fajr", fajr_today)
-    for i, (name, dt_) in enumerate(built):
-        nxt = built[i + 1] if i + 1 < len(built) else None
-        if nxt is None:
-            fajr_tm = to_dt(timings_tomorrow["Fajr"], today + timedelta(days=1))
-            return (name, dt_, "Fajr", fajr_tm)
-        if dt_ <= now < nxt[1]:
-            return (name, dt_, nxt[0], nxt[1])
-    return built[-1][0], built[-1][1], "Fajr", to_dt(timings_tomorrow["Fajr"], today + timedelta(days=1))
+        return ("Isha", isha_y, "Fajr", b["Fajr"])
+    if now < b["Sunrise"]:
+        return ("Fajr", b["Fajr"], FORBIDDEN_LABEL, b["Sunrise"])
+    if now < b["Ishraq"]:
+        return (FORBIDDEN_LABEL, b["Sunrise"], ISHRAQ_LABEL, b["Ishraq"])
+    if now < b["Zawal"]:
+        return (ISHRAQ_LABEL, b["Ishraq"], FORBIDDEN_LABEL, b["Zawal"])
+    if now < b["Dhuhr"]:
+        return (FORBIDDEN_LABEL, b["Zawal"], dlabel, b["Dhuhr"])
+    if now < b["Asr"]:
+        return (dlabel, b["Dhuhr"], "Asr", b["Asr"])
+    if now < b["MakruhSunset"]:
+        return ("Asr", b["Asr"], ASR_MAKRUH_LABEL, b["MakruhSunset"])
+    if now < b["Maghrib"]:
+        # Yellowing: Asr fard still due if missed (1 rakah before sunset = caught
+        # Asr), delay is makruh, nafl banned. Never show Forbidden here.
+        return (ASR_MAKRUH_LABEL, b["MakruhSunset"], "Maghrib", b["Maghrib"])
+    if now < b["Isha"]:
+        return ("Maghrib", b["Maghrib"], "Isha", b["Isha"])
+    fajr_tm = to_dt(timings_tomorrow["Fajr"], today + timedelta(days=1))
+    return ("Isha", b["Isha"], "Fajr", fajr_tm)
 
 def fmt_remaining(delta: timedelta):
     s = max(0, int(delta.total_seconds()))
@@ -208,9 +303,26 @@ def fmt_hm(hm: str, fmt: str):
 def fmt_dt(dt_: datetime, fmt: str):
     return fmt_hm(dt_.strftime("%H:%M"), fmt)
 
-def label_text(cur, nxt, nxt_dt, now, time_format="24h"):
+def label_text(cur, cdt, nxt, nxt_dt, now, time_format="24h", timings_today=None, today=None):
     rem = fmt_remaining(nxt_dt - now)
-    return f"{cur} ({rem} left) | {nxt} {fmt_dt(nxt_dt, time_format)}"
+    cur_disp = cur.replace(" (Nafl)", "")
+    nxt_disp = nxt.replace(" (Nafl)", "")
+    if cur == FORBIDDEN_LABEL:
+        return (f"{cur} {fmt_dt(cdt, time_format)}-{fmt_dt(nxt_dt, time_format)} "
+                f"-{rem} | {nxt_disp} {fmt_dt(nxt_dt, time_format)}")
+    if nxt == FORBIDDEN_LABEL:
+        frange = fmt_dt(nxt_dt, time_format)
+        if timings_today is not None and today is not None:
+            try:
+                b = day_bounds(timings_today, today)
+                if nxt_dt == b["Sunrise"]:
+                    frange = f"{fmt_dt(b['Sunrise'], time_format)}-{fmt_dt(b['Ishraq'], time_format)}"
+                elif nxt_dt == b["Zawal"]:
+                    frange = f"{fmt_dt(b['Zawal'], time_format)}-{fmt_dt(b['Dhuhr'], time_format)}"
+            except Exception:
+                pass
+        return f"{cur_disp} -{rem} | {nxt_disp} {frange}"
+    return f"{cur_disp} -{rem} | {nxt_disp} {fmt_dt(nxt_dt, time_format)}"
 
 # ---------- GUI ----------
 def run_gui(cfg):
@@ -260,9 +372,43 @@ def run_gui(cfg):
             now = datetime.now()
             cur, cdt, nxt, ndt = current_next(state["today"], state["tomorrow"], now)
             tf = state["cfg"].get("time_format", "24h")
-            for n in ALL:
-                mark = "> " if n == cur else "-> " if n == nxt else "   "
-                item = Gtk.MenuItem(label=f"{mark}{n}: {fmt_hm(state['today'][n], tf)}")
+            b = day_bounds(state["today"], date.today())
+            dlabel = dhuhr_name(date.today())
+            try:
+                _fajr_tm = to_dt(state["tomorrow"]["Fajr"], date.today() + timedelta(days=1))
+                _night = _fajr_tm - b["Maghrib"]
+                _last_third = _fajr_tm - _night / 3
+                _midnight = b["Maghrib"] + _night / 2
+                _tj = f"{fmt_dt(_last_third, tf)} till Fajr (best last third)"
+                _im = f"after {fmt_dt(_midnight, tf)} (pray before)"
+            except Exception:
+                _tj = "after Isha till Fajr (best last third)"
+                _im = "after midnight (pray before)"
+            rows = [
+                ("Fajr", fmt_hm(state['today']["Fajr"], tf)),
+                ("Sunrise", fmt_hm(state['today']["Sunrise"], tf)),
+                ("Forbidden (Sunrise)", f"{fmt_dt(b['Sunrise'], tf)}-{fmt_dt(b['Ishraq'], tf)} (no prayer)"),
+                (ISHRAQ_LABEL, f"{fmt_dt(b['Ishraq'], tf)} (till {fmt_dt(b['Zawal'], tf)})"),
+                ("Forbidden (Noon)", f"{fmt_dt(b['Zawal'], tf)}-{fmt_dt(b['Dhuhr'], tf)} (no prayer)"),
+                (dlabel, fmt_hm(state['today']["Dhuhr"], tf)),
+                ("Asr", fmt_hm(state['today']["Asr"], tf)),
+                (ASR_MAKRUH_LABEL, f"{fmt_dt(b['MakruhSunset'], tf)}-{fmt_dt(b['Maghrib'], tf)} (no nafl; Asr fard still due)"),
+                ("Maghrib", fmt_hm(state['today']["Maghrib"], tf)),
+                ("Isha", fmt_hm(state['today']["Isha"], tf)),
+                (ISHA_MAKRUH_LABEL, _im),
+                (TAHAJJUD_LABEL, _tj),
+            ]
+            for name, val in rows:
+                is_cur = (name == cur)
+                is_nxt = (name == nxt)
+                if cur == FORBIDDEN_LABEL:
+                    is_cur = ((name == "Forbidden (Sunrise)" and cdt == b["Sunrise"]) or
+                              (name == "Forbidden (Noon)" and cdt == b["Zawal"]))
+                if nxt == FORBIDDEN_LABEL:
+                    is_nxt = ((name == "Forbidden (Sunrise)" and ndt == b["Sunrise"]) or
+                              (name == "Forbidden (Noon)" and ndt == b["Zawal"]))
+                mark = "> " if is_cur else "-> " if is_nxt else "   "
+                item = Gtk.MenuItem(label=f"{mark}{name}: {val}")
                 item.set_sensitive(False)
                 menu.append(item)
             menu.append(Gtk.SeparatorMenuItem())
@@ -282,7 +428,7 @@ def run_gui(cfg):
         def location_dialog():
             d = Gtk.Dialog(title="Waqt Timer - Location and Display", flags=0)
             d.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK)
-            d.set_default_size(440, 320)
+            d.set_default_size(440, 420)
             root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
             root.set_margin_top(12); root.set_margin_bottom(12)
             root.set_margin_start(12); root.set_margin_end(12)
@@ -327,6 +473,29 @@ def run_gui(cfg):
             fr_disp.add(box_disp)
             root.pack_start(fr_disp, False, False, 0)
 
+            # Section 3: calculation (default Karachi 18/18 Hanafi = Islamic
+            # Foundation Bangladesh standard)
+            fr_calc = Gtk.Frame(label="Calculation")
+            box_calc = Gtk.Grid(column_spacing=8, row_spacing=8)
+            box_calc.set_margin_top(8); box_calc.set_margin_bottom(8)
+            box_calc.set_margin_start(8); box_calc.set_margin_end(8)
+            box_calc.attach(Gtk.Label(label="Method:"), 0, 0, 1, 1)
+            cmb_method = Gtk.ComboBoxText()
+            for k in METHOD_KEYS:
+                cmb_method.append_text(METHOD_LABELS.get(k, k))
+            try:
+                cmb_method.set_active(METHOD_KEYS.index(state["cfg"].get("method", "Karachi")))
+            except ValueError:
+                cmb_method.set_active(0)
+            box_calc.attach(cmb_method, 1, 0, 1, 1)
+            box_calc.attach(Gtk.Label(label="Asr school:"), 0, 1, 1, 1)
+            cmb_school = Gtk.ComboBoxText()
+            cmb_school.append_text("Hanafi"); cmb_school.append_text("Shafi")
+            cmb_school.set_active(0 if state["cfg"].get("school", "Hanafi") == "Hanafi" else 1)
+            box_calc.attach(cmb_school, 1, 1, 1, 1)
+            fr_calc.add(box_calc)
+            root.pack_start(fr_calc, False, False, 0)
+
             status = Gtk.Label()
             status.set_line_wrap(True)
             status.set_xalign(0)
@@ -366,6 +535,10 @@ def run_gui(cfg):
             d.show_all()
             if d.run() == Gtk.ResponseType.OK:
                 state["cfg"]["time_format"] = cmb_fmt.get_active_text() or "24h"
+                mi = cmb_method.get_active()
+                if mi is not None and mi >= 0:
+                    state["cfg"]["method"] = METHOD_KEYS[mi]
+                state["cfg"]["school"] = cmb_school.get_active_text() or "Hanafi"
                 if chk_auto.get_active():
                     try:
                         geolocate_ip(state["cfg"])
@@ -399,7 +572,7 @@ def run_gui(cfg):
                 refresh_times(force=True); rebuild_menu()
             cur, cdt, nxt, ndt = current_next(state["today"], state["tomorrow"], now)
             try:
-                ind.set_label(label_text(cur, nxt, ndt, now, state["cfg"].get("time_format", "24h"))[:64], "")
+                ind.set_label(label_text(cur, cdt, nxt, ndt, now, state["cfg"].get("time_format", "24h"), state["today"], now.date())[:64], "")
             except Exception:
                 pass
             return True
@@ -416,7 +589,7 @@ def run_gui(cfg):
             now = datetime.now()
             cur, cdt, nxt, ndt = current_next(state["today"], state["tomorrow"], now)
             tf = state["cfg"].get("time_format", "24h")
-            lbl.set_text(label_text(cur, nxt, ndt, now, tf) + "\n" +
+            lbl.set_text(label_text(cur, cdt, nxt, ndt, now, tf, state["today"], now.date()) + "\n" +
                          "  ".join(f"{n} {fmt_hm(state['today'][n], tf)}" for n in ALL))
             return True
         GLib.timeout_add_seconds(1, tick); tick(); Gtk.main()
@@ -438,6 +611,8 @@ def main():
     if a.school: cfg["school"] = a.school
     # migrate old installs that still default to MWL
     if cfg.get("method") == "MWL":
+        cfg["method"] = "Karachi"
+    if cfg.get("method") not in METHOD_MAP:
         cfg["method"] = "Karachi"
     if "school" not in cfg:
         cfg["school"] = "Hanafi"
@@ -469,10 +644,22 @@ def main():
         now = datetime.now()
         cur, cdt, nxt, ndt = current_next(t, tm, now)
         tf = cfg.get("time_format", "24h")
+        b = day_bounds(t, today)
+        _fajr_tm = to_dt(tm["Fajr"], today + timedelta(days=1))
+        _night = _fajr_tm - b["Maghrib"]
+        _tj_from = fmt_dt(_fajr_tm - _night / 3, tf)
+        _mid = fmt_dt(b["Maghrib"] + _night / 2, tf)
         print(json.dumps({"loc": {k: cfg.get(k) for k in ("lat", "lon", "city", "country", "method", "school", "location_mode", "time_format")},
                           "today": {k: fmt_hm(v, tf) for k, v in t.items()},
+                          "derived": {"ishraq": fmt_dt(b["Ishraq"], tf),
+                                      "forbidden_noon": f"{fmt_dt(b['Zawal'], tf)}-{fmt_dt(b['Dhuhr'], tf)}",
+                                      "makruh_sunset": f"{fmt_dt(b['MakruhSunset'], tf)}-{fmt_dt(b['Maghrib'], tf)}",
+                                      "sunset": fmt_dt(b["Sunset"], tf),
+                                      "isha_makruh_after": _mid,
+                                      "tahajjud_best_from": _tj_from,
+                                      "dhuhr_label": dhuhr_name(today)},
                           "now": now.isoformat(), "current": cur, "next": nxt,
-                          "label": label_text(cur, nxt, ndt, now, tf)}, indent=2))
+                          "label": label_text(cur, cdt, nxt, ndt, now, tf, t, today)}, indent=2))
         return
     run_gui(cfg)
 

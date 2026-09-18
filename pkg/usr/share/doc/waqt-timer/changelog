@@ -2,6 +2,40 @@
 
 All notable changes to this project are tracked here.
 
+## [1.5.2] - 2026-09-18
+### Fixed
+- Menu now labels both forbidden gaps: `Forbidden (Sunrise)` 05:46-06:01 and `Forbidden (Noon)` 11:48-11:53, each highlighted only in its own window.
+- Fixed double highlight during `Asr (Makruh)` (both Asr rows lit up); now exactly one current and one next marker in all 10 day states.
+
+## [1.5.1] - 2026-09-18
+### Fixed
+- Noon forbidden corrected 10 min to 5 min (window now 11:48-11:53 for Gazipur, matching mobile apps 11:47-11:52 within Dhuhr rounding). Triple-verified: Hanafi-Deobandi ihtiyat is 5 min (Mangera 3-5, Darul Ifta Birmingham 5), Islamic Foundation Bangladesh uses 5-6 min, and true solar noon Gazipur Sep 18 computes to 11:51:30 (Dhuhr 11:52/53 correct).
+- Sunset row hidden from the menu list (Maghrib row already carries the time).
+- Confirmed by test that switching method/school refetches every dependent time (cache is keyed by method+school; Dhuhr/Sunrise stay fixed across methods because they are astronomical, Asr moves with school: Hanafi 16:17 vs Shafi 15:20).
+
+## [1.5.0] - 2026-09-18
+### Added
+- All 23 Aladhan calculation methods selectable (Karachi, MWL, Egypt, Makkah, ISNA, Tehran, Gulf, Kuwait, Qatar, Singapore, France, Turkey, Russia, Moonsighting, Dubai, Malaysia, Tunisia, Algeria, Indonesia, Morocco, Lisbon, Jordan, Shia) via new Calculation section in settings (Method + Asr school dropdowns) and the `--method` flag.
+- Default stays Karachi 18/18 + Hanafi, the Islamic Foundation Bangladesh standard (verified via Niyat 2026 guides and LivePrayerTimes: IF Bangladesh and local mosques use 18/18 Hanafi).
+- Offline fallback maps methods without angle sets to Karachi angles with a stderr note until network returns.
+
+## [1.4.1] - 2026-09-18
+### Added
+- Sunset listed: new `Sunset` row (sun disappears = Maghrib begins) plus live `Asr (Makruh)` yellowing state and row (~15 min before Maghrib, no nafl; Asr fard still due till sunset per Bukhari/Muslim).
+- `Isha (Makruh)` info row (delay past shar'i midnight ~11:14 PM is makruh; Isha fard valid till dawn).
+- `Tahajjud (Nafl)` info row (Isha->Fajr is NOT forbidden; best from last third, e.g. 12:59 AM).
+- `--test derived` now also prints `makruh_sunset`, `sunset`, `isha_makruh_after`, `tahajjud_best_from`.
+
+## [1.4.0] - 2026-09-18
+### Fixed
+- Fajr no longer shows stale countdown till Dhuhr. Fajr ends at Sunrise; after that the app shows Forbidden (15 min sunrise gap) then Ishraq (Nafl) till zawal.
+- Ishraq/Duha marked as Nafl: `Ishraq (Nafl)` from Sunrise+15 min till 10 min before Dhuhr. Majority view (one Nafl prayer) per Fiqh-us-Sunnah.
+### Added
+- Friday Dhuhr renamed to Jumuah (same time as Dhuhr, majority view).
+- Noon forbidden window: `Forbidden 11:43-11:53 -X | Jumuah/Dhuhr HH:MM` for 10 min before Dhuhr (covers 7-10 min zawal per Tahtawi/SeekersGuidance). Top bar shows from-to instead of just next waqt.
+- Compact top-bar label: minus sign before countdown (`Ishraq -2:02:03 | ...`), no `(Nafl)` in top bar (kept in menu + JSON), forbidden range shown when Forbidden is current or next.
+- `--test` now prints `derived: {ishraq, forbidden_noon, dhuhr_label}`.
+
 ## [1.3.1] - 2026-09-16
 ### Fixed
 - Fixed `ModuleNotFoundError: No module named 'gi'` under conda. Launcher and shebang now pin `/usr/bin/python3` so the system PyGObject is always used, even with a conda env active.

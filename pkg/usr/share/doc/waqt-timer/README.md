@@ -6,15 +6,15 @@
 
 **Prayer countdown in your Linux top bar. Auto located, district precise, always on time.**
 
-[![version](https://img.shields.io/badge/version-1.3.1-green)](CHANGELOG.md)
-[![release](https://img.shields.io/badge/release-v1.3.1-blue)](https://github.com/ahmedfahad04/waqt-timer/releases/tag/v1.3.1)
+[![version](https://img.shields.io/badge/version-1.5.2-green)](CHANGELOG.md)
+[![release](https://img.shields.io/badge/release-v1.5.2-blue)](https://github.com/ahmedfahad04/waqt-timer/releases/tag/v1.5.2)
 [![platform](https://img.shields.io/badge/platform-Ubuntu%2022.04%2B-blue)](https://ubuntu.com)
 [![desktop](https://img.shields.io/badge/desktop-GNOME%20%7C%20KDE%20%7C%20XFCE%20%7C%20MATE-lightgrey)](#)
 [![python](https://img.shields.io/badge/python-3.8%2B-yellow)](https://www.python.org)
 [![method](https://img.shields.io/badge/method-Karachi%2018%2F18%20Hanafi-orange)](#configuration)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-`Maghrib (1:06:47 left) | Isha 19:13`
+`Ishraq -1:19:53 | Forbidden 11:48 AM-11:53 AM`
 
 Read how it was built: [Have You Ever Wondered How a Linux App Is Actually Built?](https://medium.com/@ahmedfahad04/have-you-ever-wondered-how-a-linux-app-is-actually-built-let-us-dismantle-the-myth-cbf00114090a)
 
@@ -22,13 +22,17 @@ Read how it was built: [Have You Ever Wondered How a Linux App Is Actually Built
 
 ## Why this exists
 
-Phone apps know where you are. Linux panel clocks do not. Waqt Timer closes that gap: it lives in the top bar, finds your location over the internet or by city name, fetches the correct times for those exact coordinates, and counts down every second. Built for Bangladesh first (Karachi 18/18, Hanafi Asr), usable anywhere by switching method and school.
+Phone apps know where you are. Linux panel clocks do not. Waqt Timer closes that gap: it lives in the top bar, finds your location over the internet or by city name, fetches the correct times for those exact coordinates, and counts down every second. Built for Bangladesh first (Karachi 18/18, Hanafi Asr, the Islamic Foundation Bangladesh standard), usable anywhere by switching method and school.
 
 ## Features
 
-- Top bar countdown: current waqt with time left plus next waqt start.
+- Top bar countdown: current waqt with `-H:MM:SS` left plus next waqt start, e.g. `Ishraq -1:19:53 | Forbidden 11:48 AM-11:53 AM`.
+- Correct waqt order: Fajr ends at Sunrise (never a stale Fajr countdown), then a 15 min sunrise gap, `Ishraq (Nafl)` till zawal.
+- Friday Dhuhr shown as Jumuah (same time as Dhuhr).
+- Forbidden and makruh windows: noon gap 5 min before Dhuhr (11:48-11:53 Gazipur, matches local apps), `Asr (Makruh)` yellowing ~15 min before Maghrib (Asr fard still due), `Isha (Makruh)` past shar'i midnight, plus a `Tahajjud (Nafl)` best-time row.
+- All 23 Aladhan calculation methods (Karachi, MWL, Egypt, Makkah, ISNA, Tehran, Gulf, Kuwait, Qatar, Singapore, France, Turkey, Russia, Moonsighting, Dubai, Malaysia, Tunisia, Algeria, Indonesia, Morocco, Lisbon, Jordan, Shia) plus Hanafi / Shafi Asr, switchable in settings or flags. Changing method refetches every dependent time.
 - Auto location over internet, or district search (Shahbag, Sylhet, Rajshahi resolve separately).
-- 12h / 24h toggle, Hanafi / Shafi Asr, MWL / Karachi / ISNA / Egypt methods.
+- 12h / 24h toggle.
 - Offline fallback when the API is down.
 - Autostart on login, one codebase for GNOME, KDE, XFCE and MATE.
 
@@ -60,13 +64,13 @@ To update later: `git pull` and rerun.
 
 Each release ships the `.deb` plus its changelog notes.
 
-1. Open [v1.3.1](https://github.com/ahmedfahad04/waqt-timer/releases/tag/v1.3.1) (or the newest entry on the [Releases](https://github.com/ahmedfahad04/waqt-timer/releases) page) and download `waqt-timer_1.3.1_all.deb`.
+1. Open [v1.5.2](https://github.com/ahmedfahad04/waqt-timer/releases/tag/v1.5.2) (or the newest entry on the [Releases](https://github.com/ahmedfahad04/waqt-timer/releases) page) and download `waqt-timer_1.5.2_all.deb`.
 2. Read the release notes there before installing, they mirror `CHANGELOG.md`.
 3. Install:
 
 ```bash
-cp ~/Downloads/waqt-timer_1.3.1_all.deb /tmp/
-sudo apt install /tmp/waqt-timer_1.3.1_all.deb
+cp ~/Downloads/waqt-timer_1.5.2_all.deb /tmp/
+sudo apt install /tmp/waqt-timer_1.5.2_all.deb
 waqt-timer --test
 waqt-timer &
 ```
@@ -74,7 +78,7 @@ waqt-timer &
 Or in one line with the GitHub CLI:
 
 ```bash
-gh release download v1.3.1 -R ahmedfahad04/waqt-timer -p '*.deb' -D /tmp && sudo apt install /tmp/waqt-timer_1.3.1_all.deb
+gh release download v1.5.2 -R ahmedfahad04/waqt-timer -p '*.deb' -D /tmp && sudo apt install /tmp/waqt-timer_1.5.2_all.deb
 ```
 
 Use `/tmp/` to avoid the apt `_apt` sandbox warning for home dir files. See `BUILD-GUIDE.md` for the full packaging walkthrough.
@@ -85,6 +89,7 @@ Use `/tmp/` to avoid the apt `_apt` sandbox warning for home dir files. See `BUI
 2. Open `Location and display` from the indicator menu.
 3. Either keep `Track location automatically` checked, or type a city and press Enter, pick a result, press OK.
 4. Switch `Time format` between `24h` and `12h` as needed.
+5. Under Calculation, pick the `Method` matching your local mosque (default Karachi 18/18 for Bangladesh) and the `Asr school` (Hanafi / Shafi).
 
 Handy commands:
 
@@ -93,19 +98,20 @@ waqt-timer --test --refresh
 waqt-timer --test --city "Shahbag, Dhaka" --refresh
 waqt-timer --test --city "Sylhet" --refresh --format 12h
 waqt-timer --test --school Hanafi --format 24h
+waqt-timer --test --method Egypt --school Shafi --refresh
 ```
 
 ## Configuration
 
-| Setting     | Default         | Where                                |
-| ----------- | --------------- | ------------------------------------ |
-| Method      | Karachi (18/18) | Menu,`--method`, config            |
-| School      | Hanafi          | Menu,`--school`                    |
-| Format      | 24h             | Menu,`--format`                    |
-| Config file | -               | `~/.config/waqt-timer/config.json` |
-| Cache       | -               | `~/.cache/waqt-timer/timings.json` |
+| Setting     | Default                          | Where                     |
+| ----------- | -------------------------------- | ------------------------- |
+| Method      | Karachi (18/18) [Bangladesh]     | Menu, `--method`, config  |
+| School      | Hanafi                           | Menu, `--school`          |
+| Format      | 24h                              | Menu, `--format`          |
+| Config file | -                                | `~/.config/waqt-timer/config.json` |
+| Cache       | -                                | `~/.cache/waqt-timer/timings.json` |
 
-Times come from Aladhan with `school=Hanafi, midnightMode=Standard, latitudeAdjustmentMethod=AngleBased`. City search uses Nominatim with Open-Meteo fallback.
+Times come from Aladhan with `school=Hanafi, midnightMode=Standard, latitudeAdjustmentMethod=AngleBased`. City search uses Nominatim with Open-Meteo fallback. The cache is keyed by date, coords, method and school, so switching method or school always refetches.
 
 ## Roadmap
 
@@ -117,7 +123,7 @@ Times come from Aladhan with `school=Hanafi, midnightMode=Standard, latitudeAdju
 
 1. Fork and create a branch: `git checkout -b fix/my-fix`.
 2. Test headless first: `python3 pkg/opt/waqt-timer/waqt_timer.py --test --refresh`.
-3. Rebuild the deb: `dpkg-deb --build pkg waqt-timer_1.3.x_all.deb`.
+3. Rebuild the deb: `dpkg-deb --build pkg waqt-timer_1.5.x_all.deb`.
 4. Open a pull request with the city you tested and before/after times.
 
 ## Issues
