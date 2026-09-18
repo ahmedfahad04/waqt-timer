@@ -82,9 +82,12 @@
   .shots { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
   @media (max-width: 760px) { .shots { grid-template-columns: 1fr; } }
   figure { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  figure img { width: 100%; display: block; }
+  figure img { width: 100%; display: block; cursor: zoom-in; }
   figcaption { padding: 12px 16px; font-size: .85rem; color: var(--muted); border-top: 1px solid var(--border); }
   figcaption strong { color: var(--text); }
+  .lightbox { position: fixed; inset: 0; background: rgba(3,6,5,.92); display: none; align-items: center; justify-content: center; z-index: 100; cursor: zoom-out; padding: 4vmin; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 80vw; max-height: 80vh; width: auto; height: auto; border: 1px solid var(--border); border-radius: var(--radius); object-fit: contain; }
 
   /* Install */
   .install-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -219,7 +222,20 @@ waqt-timer &amp;</code></pre>
   </div>
 </footer>
 
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+  <img id="lightbox-img" src="" alt="Zoomed preview" />
+</div>
+
 <script>
+document.querySelectorAll('.shots figure img').forEach(img => {
+  img.addEventListener('click', () => {
+    document.getElementById('lightbox-img').src = img.src;
+    document.getElementById('lightbox').classList.add('open');
+  });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('lightbox').classList.remove('open');
+});
 function copy(btn) {
   const code = btn.parentElement.querySelector('code').innerText;
   navigator.clipboard.writeText(code).then(() => {
