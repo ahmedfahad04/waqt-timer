@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Waqt Timer — Prayer countdown in your Linux top bar</title>
+<meta name="description" content="Waqt Timer lives in your Linux top bar, finds your location, and counts down every second to the next prayer. Free, open source, MIT." />
+<style>
+  :root {
+    --bg: #070b09;
+    --bg2: #0c1210;
+    --card: #101815;
+    --card2: #0d1411;
+    --border: #1d2b24;
+    --green: #22c55e;
+    --green-dim: #1a7f5a;
+    --green-soft: rgba(34, 197, 94, 0.12);
+    --text: #e8f0eb;
+    --muted: #93a79b;
+    --code-bg: #060a08;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  a { color: var(--green); }
+  .wrap { max-width: 1024px; margin: 0 auto; padding: 0 20px; }
+
+  /* Nav */
+  nav { border-bottom: 1px solid var(--border); background: rgba(7,11,9,.9); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px); }
+  nav .wrap { display: flex; align-items: center; gap: 12px; padding-top: 12px; padding-bottom: 12px; }
+  .logo { width: 34px; height: 34px; flex-shrink: 0; }
+  .brand { font-weight: 800; font-size: 1.15rem; letter-spacing: .2px; }
+  .brand span { color: var(--green); }
+  nav .links { margin-left: auto; display: flex; gap: 18px; font-size: .92rem; }
+  nav .links a { color: var(--muted); text-decoration: none; }
+  nav .links a:hover { color: var(--green); }
+  @media (max-width: 640px) { nav .links a:not(:last-child) { display: none; } }
+
+  /* Hero */
+  .hero { text-align: center; padding: 72px 20px 40px; background: radial-gradient(600px 280px at 50% -40px, rgba(34,197,94,.18), transparent 70%); }
+  .badge { display: inline-block; font-size: .8rem; border: 1px solid var(--border); background: var(--card); color: var(--green); border-radius: 999px; padding: 4px 14px; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.15; font-weight: 800; }
+  .hero h1 span { color: var(--green); }
+  .hero p.sub { color: var(--muted); max-width: 620px; margin: 16px auto 0; font-size: 1.05rem; }
+  .cta { display: flex; gap: 12px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
+  .btn { display: inline-block; padding: 12px 26px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: .95rem; border: 1px solid transparent; }
+  .btn-primary { background: var(--green); color: #06110b; }
+  .btn-primary:hover { background: #4ade80; }
+  .btn-ghost { border-color: var(--border); color: var(--text); background: var(--card); }
+  .btn-ghost:hover { border-color: var(--green); color: var(--green); }
+
+  /* Live pill */
+  .pill-wrap { margin: 34px auto 0; max-width: 640px; background: #0a0f0d; border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .95rem; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); animation: pulse 1.6s infinite; flex-shrink: 0; }
+  @keyframes pulse { 50% { opacity: .4; } }
+  .pill-wrap code { color: var(--green); overflow-x: auto; white-space: nowrap; }
+  .chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+  .chips span { font-size: .78rem; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 3px 12px; background: var(--card2); }
+
+  /* Sections */
+  section { padding: 52px 0; }
+  section h2 { font-size: 1.6rem; margin-bottom: 6px; }
+  section h2 span { color: var(--green); }
+  section p.lead { color: var(--muted); margin-bottom: 24px; }
+
+  /* Features */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .card:hover { border-color: var(--green-dim); }
+  .card .icon { font-size: 1.4rem; }
+  .card h3 { font-size: 1rem; margin: 8px 0 6px; }
+  .card p { color: var(--muted); font-size: .9rem; }
+
+  /* Preview */
+  #preview { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .shots { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .shots { grid-template-columns: 1fr; } }
+  figure { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  figure img { width: 100%; display: block; }
+  figcaption { padding: 12px 16px; font-size: .85rem; color: var(--muted); border-top: 1px solid var(--border); }
+  figcaption strong { color: var(--text); }
+
+  /* Install */
+  .install-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .install-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; position: relative; }
+  .panel.reco { border-color: var(--green-dim); }
+  .tag { position: absolute; top: -12px; left: 18px; background: var(--green); color: #06110b; font-size: .72rem; font-weight: 800; padding: 2px 12px; border-radius: 999px; text-transform: uppercase; letter-spacing: .5px; }
+  .panel h3 { font-size: 1.05rem; margin-bottom: 4px; }
+  .panel p { color: var(--muted); font-size: .88rem; margin-bottom: 12px; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; overflow-x: auto; font-size: .82rem; line-height: 1.7; position: relative; }
+  pre code { color: #c9e8d2; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  pre code .c { color: #5b6f62; }
+  .copy { position: absolute; top: 8px; right: 8px; background: var(--card); border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 4px 10px; font-size: .72rem; cursor: pointer; }
+  .copy:hover { color: var(--green); border-color: var(--green); }
+  ol.steps { margin: 14px 0 0 20px; color: var(--muted); font-size: .9rem; }
+  ol.steps li { margin-bottom: 6px; }
+  ol.steps code, p code, li code { background: var(--green-soft); color: var(--green); padding: 1px 7px; border-radius: 6px; font-size: .85em; font-family: ui-monospace, Menlo, monospace; }
+
+  footer { border-top: 1px solid var(--border); padding: 28px 0 40px; color: var(--muted); font-size: .85rem; text-align: center; }
+  footer a { color: var(--green); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <svg class="logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#1a7f5a"/><circle cx="32" cy="32" r="24" fill="none" stroke="#fff" stroke-width="2"/><line x1="32" y1="32" x2="32" y2="16" stroke="#fff" stroke-width="3" stroke-linecap="round"/><line x1="32" y1="32" x2="42" y2="38" stroke="#ffd75e" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="32" r="3" fill="#fff"/></svg>
+    <div class="brand">waqt<span>-timer</span></div>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#preview">Preview</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/ahmedfahad04/waqt-timer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <div class="badge">v1.5.2 &nbsp;•&nbsp; Ubuntu 22.04+ &nbsp;•&nbsp; MIT</div>
+  <h1>Prayer countdown in<br />your Linux <span>top bar.</span></h1>
+  <p class="sub">Auto-located, district-precise, always on time. Waqt Timer counts down every second to the next prayer — so you never get buried in work and miss one.</p>
+  <div class="cta">
+    <a class="btn btn-primary" href="#install">Install now</a>
+    <a class="btn btn-ghost" href="https://github.com/ahmedfahad04/waqt-timer">View on GitHub</a>
+  </div>
+  <div class="pill-wrap">
+    <div class="dot"></div>
+    <code>Ishraq -1:19:53 | Forbidden 11:48 AM–11:53 AM</code>
+  </div>
+  <div class="chips">
+    <span>GNOME</span><span>KDE</span><span>XFCE</span><span>MATE</span><span>Python 3.8+</span><span>Karachi 18/18 • Hanafi</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="features">
+    <h2>Why <span>Waqt Timer?</span></h2>
+    <p class="lead">Phone apps know where you are. Linux panel clocks do not. This closes that gap.</p>
+    <div class="grid">
+      <div class="card"><div class="icon">⏱️</div><h3>Live top-bar countdown</h3><p>Current waqt with time left plus the next waqt start, updating every second.</p></div>
+      <div class="card"><div class="icon">📍</div><h3>Auto location</h3><p>Detected over the internet, or search any city / district — Shahbag, Sylhet, Rajshahi resolve separately.</p></div>
+      <div class="card"><div class="icon">🕌</div><h3>23 calculation methods</h3><p>Karachi, MWL, Egypt, Makkah, ISNA and more, with Hanafi / Shafi Asr switching. Default matches Bangladesh standard.</p></div>
+      <div class="card"><div class="icon">🚫</div><h3>Forbidden &amp; Makruh windows</h3><p>Noon gap, Makruh Asr and Isha highlighted — plus Friday Jumuah and Tahajjud best-time rows.</p></div>
+      <div class="card"><div class="icon">📴</div><h3>Works offline</h3><p>Cached timings keep the countdown running when the API is down. Autostarts on login.</p></div>
+      <div class="card"><div class="icon">🖥️</div><h3>One codebase, every desktop</h3><p>GNOME, KDE, XFCE and MATE. 12h / 24h toggle included.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<section id="preview">
+  <div class="wrap">
+    <h2>How it <span>looks</span></h2>
+    <p class="lead">Sits quietly in the top bar. One click opens the full day.</p>
+    <div class="shots">
+      <figure>
+        <img src="images/demo_image_3.png" alt="Waqt Timer top bar countdown with full day prayer menu open" />
+        <figcaption><strong>Top-bar countdown + day menu.</strong> Current waqt, time left, and every prayer of the day at a glance.</figcaption>
+      </figure>
+      <figure>
+        <img src="images/demo_image_4.png" alt="Waqt Timer location and display settings dialog" />
+        <figcaption><strong>Location &amp; display.</strong> Auto-locate or search a city, pick 12h/24h, method and Asr school.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+
+  <section id="install">
+    <h2>How to <span>install</span></h2>
+    <p class="lead">Two ways — from source (recommended) or from a .deb release.</p>
+    <div class="install-grid">
+      <div class="panel reco">
+        <div class="tag">Recommended</div>
+        <h3>Option A — Run from source</h3>
+        <p>Clone, install dependencies, run. Update later with <code>git pull</code>.</p>
+        <pre><button class="copy" onclick="copy(this)">Copy</button><code><span class="c"># clone the repo</span>
+git clone https://github.com/ahmedfahad04/waqt-timer.git
+cd waqt-timer
+<span class="c"># dependencies (Ubuntu/Debian)</span>
+sudo apt install python3 python3-gi gir1.2-gtk-3.0 \
+  gir1.2-ayatanaappindicator3-0.1
+<span class="c"># test, then run</span>
+python3 pkg/opt/waqt-timer/waqt_timer.py --test
+python3 pkg/opt/waqt-timer/waqt_timer.py &amp;</code></pre>
+      </div>
+      <div class="panel">
+        <h3>Option B — Install the .deb</h3>
+        <p>Download <code>waqt-timer_1.5.2_all.deb</code> from <a href="https://github.com/ahmedfahad04/waqt-timer/releases">Releases</a>, then:</p>
+        <pre><button class="copy" onclick="copy(this)">Copy</button><code>cp ~/Downloads/waqt-timer_1.5.2_all.deb /tmp/
+sudo apt install /tmp/waqt-timer_1.5.2_all.deb
+waqt-timer --test
+waqt-timer &amp;</code></pre>
+        <ol class="steps">
+          <li>Launch <code>waqt-timer</code> from the app grid or terminal.</li>
+          <li>Open <code>Location and display</code> from the indicator menu.</li>
+          <li>Keep auto-locate on, or type a city and press Enter.</li>
+          <li>Pick method + Asr school matching your local mosque.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>MIT License • Built with Python + GTK • Times via <a href="https://aladhan.com/prayer-times-api">Aladhan API</a></p>
+    <p style="margin-top:6px;"><a href="https://github.com/ahmedfahad04/waqt-timer">GitHub</a> &nbsp;•&nbsp; <a href="https://medium.com/@ahmedfahad04/have-you-ever-wondered-how-a-linux-app-is-actually-built-let-us-dismantle-the-myth-cbf00114090a">How it was built</a> &nbsp;•&nbsp; <a href="mailto:ahmedfahad3596@gmail.com">Contact</a></p>
+  </div>
+</footer>
+
+<script>
+function copy(btn) {
+  const code = btn.parentElement.querySelector('code').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+</script>
+
+</body>
+</html>
