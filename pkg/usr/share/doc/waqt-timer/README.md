@@ -126,6 +126,26 @@ Times come from Aladhan with `school=Hanafi, midnightMode=Standard, latitudeAdju
 3. Rebuild the deb: `dpkg-deb --build pkg waqt-timer_1.5.x_all.deb`.
 4. Open a pull request with the city you tested and before/after times.
 
+## Releasing
+
+Maintainers ship a version with `release.sh`. It takes the version as an argument, writes the release notes from the matching `## [X.Y.Z]` section of `CHANGELOG.md`, builds `waqt-timer_X.Y.Z_all.deb` when it is not ready yet, pushes the branch and publishes the GitHub release with the `.deb` attached.
+
+```bash
+# 1. add the entry to CHANGELOG.md first, e.g. ## [1.5.4] - 2026-09-26
+./release.sh 1.5.4 --dry-run    # preview tag, title, notes and asset, change nothing
+./release.sh 1.5.4 --commit     # bump version strings, build the .deb, publish
+```
+
+| Command | What it does |
+| --- | --- |
+| `./release.sh 1.5.4 --commit` | Release 1.5.4 end to end |
+| `./release.sh 1.5.4 --dry-run` | Show the plan and the notes, write nothing |
+| `./release.sh 1.5.4 --rebuild` | Rebuild the `.deb` even if one is already there |
+| `./release.sh 1.5.4 --draft` | Publish the release as a draft |
+| `./release.sh 1.5.4 --allow-dirty` | Release with uncommitted changes in the tree |
+
+Omit the version to release whatever `Version:` is in `pkg/DEBIAN/control`. The script stops before changing anything if the `## [X.Y.Z]` section is missing, if the tag or release already exists, or if the working tree is dirty and `--commit` was not given. Needs `gh auth login`, `dpkg-deb` and push access to the repository.
+
 ## Issues
 
 Found wrong times for your area? Open an issue with:
