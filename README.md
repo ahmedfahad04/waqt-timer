@@ -6,8 +6,8 @@
 
 **Prayer countdown in your Linux top bar. Auto located, district precise, always on time.**
 
-[![version](https://img.shields.io/badge/version-1.5.2-green)](CHANGELOG.md)
-[![release](https://img.shields.io/badge/release-v1.5.2-blue)](https://github.com/ahmedfahad04/waqt-timer/releases/tag/v1.5.2)
+[![version](https://img.shields.io/badge/version-1.5.3-green)](CHANGELOG.md)
+[![release](https://img.shields.io/badge/release-v1.5.3-blue)](https://github.com/ahmedfahad04/waqt-timer/releases/tag/v1.5.3)
 [![platform](https://img.shields.io/badge/platform-Ubuntu%2022.04%2B-blue)](https://ubuntu.com)
 [![desktop](https://img.shields.io/badge/desktop-GNOME%20%7C%20KDE%20%7C%20XFCE%20%7C%20MATE-lightgrey)](#)
 [![python](https://img.shields.io/badge/python-3.8%2B-yellow)](https://www.python.org)
@@ -64,13 +64,13 @@ To update later: `git pull` and rerun.
 
 Each release ships the `.deb` plus its changelog notes.
 
-1. Open [v1.5.2](https://github.com/ahmedfahad04/waqt-timer/releases/tag/v1.5.2) (or the newest entry on the [Releases](https://github.com/ahmedfahad04/waqt-timer/releases) page) and download `waqt-timer_1.5.2_all.deb`.
+1. Open [v1.5.3](https://github.com/ahmedfahad04/waqt-timer/releases/tag/v1.5.3) (or the newest entry on the [Releases](https://github.com/ahmedfahad04/waqt-timer/releases) page) and download `waqt-timer_1.5.3_all.deb`.
 2. Read the release notes there before installing, they mirror `CHANGELOG.md`.
 3. Install:
 
 ```bash
-cp ~/Downloads/waqt-timer_1.5.2_all.deb /tmp/
-sudo apt install /tmp/waqt-timer_1.5.2_all.deb
+cp ~/Downloads/waqt-timer_1.5.3_all.deb /tmp/
+sudo apt install /tmp/waqt-timer_1.5.3_all.deb
 waqt-timer --test
 waqt-timer &
 ```
@@ -78,7 +78,7 @@ waqt-timer &
 Or in one line with the GitHub CLI:
 
 ```bash
-gh release download v1.5.2 -R ahmedfahad04/waqt-timer -p '*.deb' -D /tmp && sudo apt install /tmp/waqt-timer_1.5.2_all.deb
+gh release download v1.5.3 -R ahmedfahad04/waqt-timer -p '*.deb' -D /tmp && sudo apt install /tmp/waqt-timer_1.5.3_all.deb
 ```
 
 Use `/tmp/` to avoid the apt `_apt` sandbox warning for home dir files. See `BUILD-GUIDE.md` for the full packaging walkthrough.

@@ -2,6 +2,12 @@
 
 All notable changes to this project are tracked here.
 
+## [1.5.3] - 2026-09-25
+### Fixed
+- Offline fallback (PrayTimes port) solved Asr with a negated solar altitude, putting Asr **after** Maghrib (Dhaka 19:26 vs Maghrib 17:53). `_asr_time` now passes the positive `arccot` angle to `_sun_angle_time`, which reads it as altitude. Verified offline: Hanafi Asr 16:12 (was 19:26), Shafi 15:16 (was 20:22), both before Maghrib 17:53.
+- Top-bar state machine was inverted every afternoon because of the same sign error: from 12:00 to 19:59 the label stayed on `Jumuah -X:XX:XX | Asr 19:26`, skipping `Asr`, `Asr (Makruh)`, `Maghrib` and `Isha`. Verified with `--test`: 17:26 now reads `Asr -0:11:44 | Asr (Makruh) 5:38 PM`.
+- Asr school order was backwards offline (Shafi factor 1 gave 20:22, later than Hanafi factor 2 at 19:26); Hanafi is now the later of the two again.
+
 ## [1.5.2] - 2026-09-18
 ### Fixed
 - Menu now labels both forbidden gaps: `Forbidden (Sunrise)` 05:46-06:01 and `Forbidden (Noon)` 11:48-11:53, each highlighted only in its own window.

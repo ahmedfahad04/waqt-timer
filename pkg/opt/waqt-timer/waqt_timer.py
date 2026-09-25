@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Waqt Timer v1.5.2 - top-bar prayer countdown. GNOME + Tray via AppIndicator."""
+"""Waqt Timer v1.5.3 - top-bar prayer countdown. GNOME + Tray via AppIndicator."""
 import json, os, sys, urllib.request, urllib.parse
 from datetime import datetime, date, timedelta
 from pathlib import Path
@@ -28,7 +28,7 @@ SCHOOL_MAP = {"Shafi": 0, "Hanafi": 1}
 DEFAULT_CFG = {"lat": 23.8103, "lon": 90.4125, "city": "Dhaka", "country": "Bangladesh",
                "method": "Karachi", "school": "Hanafi",
                "location_mode": "auto", "time_format": "24h"}
-UA = "waqt-timer/1.5.2"
+UA = "waqt-timer/1.5.3"
 
 PRAYERS = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"]
 ALL = ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"]

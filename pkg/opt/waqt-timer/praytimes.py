@@ -51,7 +51,7 @@ class PrayTimes:
 
     def _asr_time(self, jd, tz, lng, lat, base):
         decl, _ = self._sun(jd)
-        angle = math.degrees(-math.acot(self.asr_factor + math.tan(math.radians(abs(lat - decl)))))
+        angle = math.degrees(math.acot(self.asr_factor + math.tan(math.radians(abs(lat - decl)))))
         return self._sun_angle_time(jd, tz, lng, lat, angle, 'cw', base)
 
     def get_times(self, dt: date, lat: float, lng: float, tz: float):
